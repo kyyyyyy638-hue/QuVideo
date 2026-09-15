@@ -2,6 +2,7 @@ package com.quvideo.server.service;
 
 import com.quvideo.server.dto.TranscriptSegment;
 import com.quvideo.server.dto.VideoContext;
+import com.quvideo.server.utils.OcrTextSimilarityUtils;
 import com.quvideo.server.utils.OcrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ public class VideoContextService {
     private static final Logger log = LoggerFactory.getLogger(VideoContextService.class);
     private static final long SEGMENT_MS = 60_000L;
     private static final long FALLBACK_FRAME_INTERVAL_MS = 30_000L;
+    private static final double DUPLICATE_TEXT_RATIO = 0.15;
 
     private final SegmentedTranscriptionService transcriptionService;
     private final OcrUtils ocrUtils;
@@ -59,6 +61,7 @@ public class VideoContextService {
         }
 
         List<FramePart> result = new ArrayList<>();
+        String previousText = null;
         for (int i = 0; i < frameFiles.size(); i++) {
             String ocrText;
             try {
@@ -68,6 +71,10 @@ public class VideoContextService {
                 continue;
             }
             long timestampMs = i < timestamps.size() ? timestamps.get(i) : i * FALLBACK_FRAME_INTERVAL_MS;
+            if (OcrTextSimilarityUtils.isNearDuplicate(previousText, ocrText, DUPLICATE_TEXT_RATIO)) {
+                continue;
+            }
+            previousText = ocrText;
             if (!ocrText.isBlank()) {
                 result.add(new FramePart(timestampMs, ocrText));
             }
