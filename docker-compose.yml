@@ -54,3 +54,39 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - ./minio/data:/data
+
+  rmqnamesrv:
+    image: apache/rocketmq:5.3.4
+    ports:
+      - "127.0.0.1:9876:9876"
+    environment:
+      JAVA_OPT_EXT: -server -Xms256m -Xmx256m -Xmn128m
+    command: sh mqnamesrv
+
+  rmqbroker:
+    image: apache/rocketmq:5.3.4
+    ports:
+      # 本地补丁：移除了 10909（VIP 通道）的发布。
+      # 依据：rocketmq-client 5.2.0 的 ClientConfig.vipChannelEnabled 默认值为 false
+      #（字节码中 getProperty("com.rocketmq.sendMessageWithVIPChannel", "false")），
+      # 客户端不会连接 VIP 端口，只连 10911。而本机 10909 被 FlClashCore.exe 占用，
+      # 保留该映射会导致 broker 容器因端口绑定失败而无法启动。
+      - "127.0.0.1:10911:10911"
+    environment:
+      NAMESRV_ADDR: rmqnamesrv:9876
+      BROKER_ID: 0
+      BROKER_ROLE: ASYNC_MASTER
+      JAVA_OPT_EXT: -server -Xms256m -Xmx256m -Xmn128m
+    volumes:
+      - ./rocketmq/broker.conf:/home/rocketmq/broker.conf:ro
+      # 本地补丁：store / logs 由「命名卷」改为「主机目录绑定挂载」。
+      # 原因：本镜像以非 root 用户 rocketmq(uid 3000) 运行，而 Docker 创建的命名卷挂载点
+      # 属主为 root:root 755，容器写入被拒 → broker 启动即 System.exit(-3)（退出码 253）。
+      # 该崩溃发生在日志系统初始化期间，因此容器日志里只有 logback 配置输出、看不到异常，
+      # 卷目录也是空的，极难定位。绑定挂载的权限在本机环境宽松，且与本项目
+      # mysql / redis / minio / qdrant 四个服务保持一致。
+      - ./rocketmq/store:/home/rocketmq/store
+      - ./rocketmq/logs:/home/rocketmq/logs
+    command: sh mqbroker -n rmqnamesrv:9876 -c /home/rocketmq/broker.conf
+    depends_on:
+      - rmqnamesrv
