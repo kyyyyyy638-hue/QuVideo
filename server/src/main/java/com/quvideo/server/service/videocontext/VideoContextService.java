@@ -3,6 +3,7 @@ package com.quvideo.server.service.videocontext;
 import com.quvideo.server.dto.VideoContext;
 import com.quvideo.server.dto.TranscriptSegment;
 import com.quvideo.server.service.agent.AgentTelemetry;
+import com.quvideo.server.utils.FrameSignatureUtils;
 import com.quvideo.server.utils.MinioUtils;
 import com.quvideo.server.utils.OcrUtils;
 import org.slf4j.Logger;
@@ -10,11 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-
-import javax.imageio.ImageIO;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.File;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -227,8 +223,9 @@ public class VideoContextService {
         Long previousHash = null;
         int failedFrames = 0;
         for (int i = 0; i < frameFiles.size(); i++) {
-            long imageHash = differenceHash(frameFiles.get(i).toFile());
-            if (previousHash != null && Long.bitCount(previousHash ^ imageHash) <= 5) {
+            long imageHash = FrameSignatureUtils.signature(frameFiles.get(i).toFile());
+            if (previousHash != null && FrameSignatureUtils.isNearDuplicate(
+                    previousHash, imageHash, FrameSignatureUtils.DEFAULT_DUPLICATE_THRESHOLD)) {
                 continue;
             }
             previousHash = imageHash;
@@ -284,27 +281,6 @@ public class VideoContextService {
 
     private long windowStart(long timestampMs) {
         return timestampMs / SEGMENT_MS * SEGMENT_MS;
-    }
-
-    private long differenceHash(File imageFile) throws Exception {
-        BufferedImage source = ImageIO.read(imageFile);
-        if (source == null) return 0;
-        BufferedImage scaled = new BufferedImage(9, 8, BufferedImage.TYPE_BYTE_GRAY);
-        Graphics2D graphics = scaled.createGraphics();
-        try {
-            graphics.drawImage(source, 0, 0, 9, 8, null);
-        } finally {
-            graphics.dispose();
-        }
-
-        long hash = 0;
-        for (int y = 0; y < 8; y++) {
-            for (int x = 0; x < 8; x++) {
-                hash <<= 1;
-                if (scaled.getRGB(x, y) > scaled.getRGB(x + 1, y)) hash |= 1;
-            }
-        }
-        return hash;
     }
 
     private void runCommand(List<String> command, List<Long> timestamps) throws Exception {
