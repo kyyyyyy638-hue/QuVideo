@@ -16,7 +16,7 @@ import java.io.IOException;
 public final class FrameSignatureUtils {
 
     /** 默认判重阈值：汉明距离不大于该值视为同一画面。 */
-    public static final int DEFAULT_DUPLICATE_THRESHOLD = 3;
+    public static final int DEFAULT_DUPLICATE_THRESHOLD = 5;
 
     private FrameSignatureUtils() {
     }
