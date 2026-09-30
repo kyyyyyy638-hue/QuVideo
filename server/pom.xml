@@ -13,8 +13,12 @@
 	<name>quvideo-server</name>
 	<description>QuVideo Server</description>
 
-		<properties>
+	<properties>
 		<java.version>21</java.version>
+		<!-- 本地补丁：JDK 23+ 起 javac 不再默认运行 classpath 上的注解处理器，
+		     不加此项会导致 Lombok 生成的 getter/setter 全部缺失、编译报“找不到符号”。
+		     该值对 JDK 17/21/25 均安全（21 及更早本就是默认行为）。 -->
+		<maven.compiler.proc>full</maven.compiler.proc>
 	</properties>
 
 	<dependencies>
@@ -23,70 +27,91 @@
 			<artifactId>okhttp</artifactId>
 			<version>4.12.0</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.alibaba.fastjson2</groupId>
 			<artifactId>fastjson2</artifactId>
 			<version>2.0.43</version>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
+
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-web</artifactId>
+				<exclusions>
+					<exclusion>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-starter-tomcat</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-starter-undertow</artifactId>
 			</dependency>
+
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-starter-validation</artifactId>
 			</dependency>
+
 			<dependency>
 				<groupId>com.baomidou</groupId>
 				<artifactId>mybatis-plus-spring-boot3-starter</artifactId>
 				<version>3.5.9</version>
 			</dependency>
+
 			<dependency>
 				<groupId>com.mysql</groupId>
 				<artifactId>mysql-connector-j</artifactId>
 				<scope>runtime</scope>
 			</dependency>
+
 			<dependency>
 				<groupId>org.flywaydb</groupId>
 				<artifactId>flyway-core</artifactId>
 			</dependency>
+
 			<dependency>
 				<groupId>org.flywaydb</groupId>
 				<artifactId>flyway-mysql</artifactId>
 			</dependency>
+
 			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<optional>true</optional>
 			</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>io.minio</groupId>
 			<artifactId>minio</artifactId>
 			<version>8.5.7</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.rocketmq</groupId>
 			<artifactId>rocketmq-spring-boot-starter</artifactId>
 			<version>2.3.0</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.redisson</groupId>
 			<artifactId>redisson-spring-boot-starter</artifactId>
 			<version>3.52.0</version>
 		</dependency>
+
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-open-ai</artifactId>
 			<version>1.16.3</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -97,7 +122,28 @@
 
 	<build>
 		<plugins>
-						<plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.6.3</version>
+				<executions>
+					<execution>
+						<id>require-java-21</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requireJavaVersion>
+									<version>[21,)</version>
+									<message>QuVideo backend requires JDK 21 or newer.</message>
+								</requireJavaVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
