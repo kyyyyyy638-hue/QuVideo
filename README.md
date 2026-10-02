@@ -1,6 +1,6 @@
 <div align="center">
   <h2>QuVideo</h2>
-  
+
   <p>
     <a href="https://github.com/kyyyyyy638-hue/QuVideo/stargazers"><img src="https://img.shields.io/github/stars/kyyyyyy638-hue/QuVideo?style=flat-square" alt="GitHub Stars"></a>
     <img src="https://img.shields.io/badge/Java-21-E76F00?style=flat-square" alt="Java 21">
@@ -31,7 +31,9 @@
 
 **Agent 分析结果**
 
-<img width="1500" height="1450" alt="QuVideo Agent 分析结果" src="docs/images/agent-result.png" />
+![image-20261002161524309](C:\Users\24197\AppData\Roaming\Typora\typora-user-images\image-20261002161524309.png)
+
+![image-20261002161545654](C:\Users\24197\AppData\Roaming\Typora\typora-user-images\image-20261002161545654.png)![image-20261002161600798](C:\Users\24197\AppData\Roaming\Typora\typora-user-images\image-20261002161600798.png)
 
 
 
